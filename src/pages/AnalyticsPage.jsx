@@ -22,8 +22,8 @@ export default function AnalyticsPage() {
   const { theme } = useTheme();
   const analytics = useMemo(() => getAnalytics(), [jobs]);
 
-  const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
-  const textColor = theme === 'dark' ? '#a0a0b8' : '#5a5a7a';
+  const gridColor = theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const textColor = theme === 'dark' ? '#A1A1AA' : '#6B7280';
 
   const commonOptions = {
     responsive: true,
@@ -31,10 +31,10 @@ export default function AnalyticsPage() {
     plugins: {
       legend: { display: false },
       tooltip: {
-        backgroundColor: theme === 'dark' ? '#1a1a2e' : '#ffffff',
-        titleColor: theme === 'dark' ? '#f0f0f5' : '#1a1a2e',
+        backgroundColor: theme === 'dark' ? '#18181B' : '#ffffff',
+        titleColor: theme === 'dark' ? '#FAFAFA' : '#000000',
         bodyColor: textColor,
-        borderColor: theme === 'dark' ? '#2a2a42' : '#e2e4ea',
+        borderColor: theme === 'dark' ? '#27272A' : '#E5E7EB',
         borderWidth: 1,
         cornerRadius: 8,
         padding: 12,
@@ -62,8 +62,8 @@ export default function AnalyticsPage() {
     datasets: [{
       label: 'Applications',
       data: analytics.last30Days.map(d => d.count),
-      borderColor: '#818cf8',
-      backgroundColor: 'rgba(129, 140, 248, 0.1)',
+      borderColor: '#3B82F6',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)',
       fill: true,
       tension: 0.4,
       pointRadius: 0,
@@ -75,8 +75,8 @@ export default function AnalyticsPage() {
   // Bar chart - Status distribution
   const statusLabels = Object.keys(analytics.statusDist);
   const statusColors = [
-    '#6b6b82', '#60a5fa', '#a78bfa', '#fbbf24',
-    '#fbbf24', '#fbbf24', '#34d399', '#f87171'
+    '#71717A', '#60a5fa', '#8B5CF6', '#facc15',
+    '#facc15', '#facc15', '#4ade80', '#f87171'
   ];
 
   const barData = {
@@ -106,20 +106,20 @@ export default function AnalyticsPage() {
         analytics.statusDist['Rejected'] || 0,
       ],
       backgroundColor: [
-        'rgba(107, 107, 130, 0.7)',
+        'rgba(113, 113, 122, 0.7)',
         'rgba(96, 165, 250, 0.7)',
-        'rgba(251, 191, 36, 0.7)',
-        'rgba(52, 211, 153, 0.7)',
+        'rgba(250, 204, 21, 0.7)',
+        'rgba(74, 222, 128, 0.7)',
         'rgba(248, 113, 113, 0.7)',
       ],
-      borderColor: ['#6b6b82', '#60a5fa', '#fbbf24', '#34d399', '#f87171'],
+      borderColor: ['#71717A', '#60a5fa', '#facc15', '#4ade80', '#f87171'],
       borderWidth: 2,
     }]
   };
 
   // Funnel data
   const funnelStages = [
-    { label: 'Total Jobs', count: analytics.totalJobs, color: '#818cf8' },
+    { label: 'Total Jobs', count: analytics.totalJobs, color: '#3B82F6' },
     { label: 'Applied', count: analytics.totalApplied, color: '#60a5fa' },
     { label: 'Interviewing', count: analytics.totalInterviews, color: '#fbbf24' },
     { label: 'Offers', count: analytics.totalOffers, color: '#34d399' },
