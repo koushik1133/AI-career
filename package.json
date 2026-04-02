@@ -9,7 +9,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "predeploy": "npm run build",
+    "predeploy": "GITHUB_PAGES=true VITE_BASE_PATH=/AI-career npm run build",
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {

@@ -7,9 +7,11 @@ import { DataProvider } from './context/DataContext.jsx';
 import { ThemeProvider } from './context/ThemeContext.jsx';
 import './index.css';
 
+const basePath = import.meta.env.VITE_BASE_PATH || '';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter basename="/AI-career">
+    <BrowserRouter basename={basePath}>
       <ThemeProvider>
         <AuthProvider>
           <DataProvider>
