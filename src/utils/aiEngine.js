@@ -278,3 +278,316 @@ export function generatePrepPlan(job) {
 
   return stages[job.status] || stages['Applied'];
 }
+
+export function extractJobDetails(jobDescription) {
+  if (!jobDescription) return { company: 'Target Company', title: 'Specialist', skills: [], requirements: [], experience_level: 'Not specified' };
+  
+  const jdLower = jobDescription.toLowerCase();
+  
+  // Try to find company name
+  let company = 'Target Company';
+  const companyMatch = jobDescription.match(/(?:at|join|role\s+at)\s+([A-Z][a-zA-Z0-9\s]{1,20})(?:\s+is|\s+to|\s+team|\b)/);
+  if (companyMatch && companyMatch[1]) {
+    company = companyMatch[1].trim();
+  } else {
+    // Look at first line
+    const firstLine = jobDescription.split('\n')[0];
+    const aboutMatch = firstLine.match(/(?:about|for|at)\s+([A-Z][a-zA-Z0-9\s]{1,20})/i);
+    if (aboutMatch && aboutMatch[1]) company = aboutMatch[1].trim();
+  }
+  
+  // Try to find job title
+  let title = 'Professional';
+  const titles = [
+    'Software Engineer', 'Frontend Engineer', 'Backend Engineer', 'Full Stack Engineer',
+    'Data Scientist', 'Data Analyst', 'Product Manager', 'Project Manager',
+    'DevOps Engineer', 'Security Engineer', 'UX Designer', 'Product Designer',
+    'QA Engineer', 'Solutions Architect', 'Engineering Manager'
+  ];
+  for (const t of titles) {
+    if (jdLower.includes(t.toLowerCase())) {
+      title = t;
+      break;
+    }
+  }
+  
+  // Extract skills
+  const COMMON_KEYS = {
+    ...COMMON_KEYWORDS,
+    'javascript': ['js', 'es6', 'react', 'vue', 'angular', 'node', 'express'],
+    'python': ['django', 'flask', 'fastapi', 'numpy', 'pandas', 'scikit-learn']
+  };
+  const allSkills = new Set();
+  for (const [category, keywords] of Object.entries(COMMON_KEYS)) {
+    if (Array.isArray(keywords)) {
+      keywords.forEach(kw => {
+        const regex = new RegExp('\\b' + kw.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&') + '\\b', 'i');
+        if (regex.test(jdLower)) {
+          allSkills.add(kw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+        }
+      });
+    }
+  }
+  const skills = Array.from(allSkills).slice(0, 12);
+  
+  // Extract requirements
+  const requirements = [];
+  const lines = jobDescription.split('\n');
+  let inReqSection = false;
+  
+  for (const line of lines) {
+    const cleanLine = line.trim();
+    if (!cleanLine) continue;
+    
+    if (/(?:requirements|qualifications|what\s+you|look\s+for|skills\s+required|must\s+have)/i.test(cleanLine)) {
+      inReqSection = true;
+      continue;
+    }
+    
+    if (inReqSection && /(?:about|responsibilities|benefits|apply|compensation|what\s+we)/i.test(cleanLine) && !cleanLine.startsWith('-') && !cleanLine.startsWith('*')) {
+      inReqSection = false;
+    }
+    
+    if (inReqSection && (cleanLine.startsWith('-') || cleanLine.startsWith('*') || cleanLine.startsWith('•') || /^\d+\./.test(cleanLine))) {
+      requirements.push(cleanLine.replace(/^[-*•\d\.\s]+/, '').trim());
+    } else if (!inReqSection && requirements.length < 5 && /(?:experience\s+with|proficient\s+in|familiar\s+with|ability\s+to)/i.test(cleanLine)) {
+      requirements.push(cleanLine.replace(/^[-*•\d\.\s]+/, '').trim());
+    }
+  }
+  
+  if (requirements.length === 0) {
+    lines.filter(l => l.trim().length > 30 && (l.includes('experience') || l.includes('skills') || l.includes('ability'))).slice(0, 5).forEach(l => {
+      requirements.push(l.trim().replace(/^[-*•\d\.\s]+/, ''));
+    });
+  }
+  
+  // Experience level
+  let experience_level = 'Mid-level';
+  const expMatch = jobDescription.match(/(\d+)\+?\s*years?/i);
+  if (expMatch) {
+    const years = parseInt(expMatch[1]);
+    if (years <= 2) experience_level = 'Junior / Entry';
+    else if (years >= 6) experience_level = 'Senior';
+    else experience_level = `Mid-level (${years}+ yrs)`;
+  } else if (jdLower.includes('senior') || jdLower.includes('lead') || jdLower.includes('principal')) {
+    experience_level = 'Senior';
+  } else if (jdLower.includes('junior') || jdLower.includes('associate') || jdLower.includes('entry')) {
+    experience_level = 'Junior / Entry';
+  } else if (jdLower.includes('intern') || jdLower.includes('co-op')) {
+    experience_level = 'Internship';
+  }
+  
+  return {
+    company,
+    title,
+    skills,
+    requirements: requirements.slice(0, 6),
+    experience_level
+  };
+}
+
+export function prioritizeSkills(userSkills, jobKeywords) {
+  if (!userSkills) return [];
+  if (!jobKeywords || jobKeywords.length === 0) return userSkills;
+  
+  const normalizedKeywords = jobKeywords.map(k => k.toLowerCase());
+  return [...userSkills].sort((a, b) => {
+    const aMatch = normalizedKeywords.some(kw => a.toLowerCase().includes(kw) || kw.includes(a.toLowerCase()));
+    const bMatch = normalizedKeywords.some(kw => b.toLowerCase().includes(kw) || kw.includes(b.toLowerCase()));
+    if (aMatch && !bMatch) return -1;
+    if (!aMatch && bMatch) return 1;
+    return 0;
+  });
+}
+
+export function generateProfessionalSummary(profile, jobDetails) {
+  const { company, title, skills } = jobDetails;
+  
+  // Calculate total years of experience
+  let totalYears = 0;
+  if (profile.experience && profile.experience.length > 0) {
+    profile.experience.forEach(exp => {
+      if (exp.dates) {
+        const match = exp.dates.match(/(\d{4})/g);
+        if (match && match.length === 2) {
+          totalYears += Math.max(1, parseInt(match[1]) - parseInt(match[0]));
+        } else if (exp.dates.includes('Present') || exp.dates.includes('present')) {
+          const startYearMatch = exp.dates.match(/(\d{4})/);
+          if (startYearMatch) {
+            totalYears += Math.max(1, new Date().getFullYear() - parseInt(startYearMatch[0]));
+          }
+        }
+      }
+    });
+  }
+  if (totalYears === 0) totalYears = 3;
+  
+  const primarySkill = profile.skills && profile.skills.length > 0 ? profile.skills[0] : 'software development';
+  const otherSkills = profile.skills && profile.skills.length > 1 ? profile.skills.slice(1, 4).join(', ') : 'modern technologies';
+  
+  const sentences = [
+    `Results-oriented ${title} with ${totalYears}+ years of experience specializing in ${primarySkill} and ${otherSkills}.`,
+    `Demonstrated success driving project efficiency and scalability, with technical skills highly aligned with ${company}'s current requirements.`,
+    `Adept at cross-functional collaboration, technical problem-solving, and implementing robust solutions to meet strategic goals.`,
+    `Eager to contribute technical expertise and innovative engineering strategies to the ${title} role at ${company}.`
+  ];
+  
+  return sentences.join(' ');
+}
+
+export function generateResumeSections(profile, jobDetails) {
+  const { title, company, skills } = jobDetails;
+  
+  // Tailored summary
+  const summary = generateProfessionalSummary(profile, jobDetails);
+  
+  // Tailored skills
+  const tailoredSkills = prioritizeSkills(profile.skills || [], skills);
+  
+  // Tailored experience bullets
+  const tailoredExperience = (profile.experience || []).map(exp => {
+    const tailoredBullets = (exp.bullets || []).map(bullet => {
+      let tailoredBullet = bullet;
+      // Inject keywords with some randomness
+      if (skills.length > 0 && Math.random() > 0.4) {
+        const keySkill = skills[Math.floor(Math.random() * skills.length)];
+        if (!bullet.toLowerCase().includes(keySkill.toLowerCase())) {
+          if (bullet.endsWith('.')) bullet = bullet.slice(0, -1);
+          tailoredBullet = `${bullet}, utilizing ${keySkill} to optimize performance and align with project specifications.`;
+        }
+      }
+      
+      if (title.toLowerCase().includes('frontend') && bullet.includes('API')) {
+        tailoredBullet = tailoredBullet.replace(/API/g, 'RESTful APIs and frontend integrations');
+      }
+      if (title.toLowerCase().includes('backend') && bullet.includes('database')) {
+        tailoredBullet = tailoredBullet.replace(/database/gi, 'highly optimized PostgreSQL/NoSQL database schemas');
+      }
+      
+      return tailoredBullet;
+    });
+    
+    return {
+      ...exp,
+      bullets: tailoredBullets
+    };
+  });
+
+  // Tailored projects
+  const tailoredProjects = (profile.projects || []).map(project => {
+    let description = project.description || '';
+    if (skills.length > 0 && Math.random() > 0.5) {
+      const matchSkill = skills.find(s => (project.tech || []).some(t => t.toLowerCase() === s.toLowerCase()));
+      if (matchSkill) {
+        description += ` (Implemented utilizing ${matchSkill} architecture best practices.)`;
+      }
+    }
+    return {
+      ...project,
+      description
+    };
+  });
+  
+  return {
+    ...profile,
+    summary,
+    skills: tailoredSkills,
+    experience: tailoredExperience,
+    projects: tailoredProjects
+  };
+}
+
+export function findCommonGround(userProfile, contactProfile) {
+  const common = {
+    skills: [],
+    schools: [],
+    companies: [],
+    location: null
+  };
+  
+  if (!userProfile || !contactProfile) return common;
+  
+  // 1. Common Skills
+  const userSkillsSet = new Set((userProfile.skills || []).map(s => s.toLowerCase()));
+  const contactSkills = contactProfile.skills || [];
+  contactSkills.forEach(skill => {
+    if (userSkillsSet.has(skill.toLowerCase())) {
+      common.skills.push(skill);
+    }
+  });
+  
+  // 2. Common Schools
+  const userSchools = (userProfile.education || []).map(edu => (edu.school || '').toLowerCase());
+  const contactEdu = (contactProfile.education || '');
+  userSchools.forEach(school => {
+    if (school && contactEdu.toLowerCase().includes(school)) {
+      common.schools.push(school.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+    }
+  });
+  
+  // 3. Common Companies
+  const userCompanies = (userProfile.experience || []).map(exp => (exp.company || '').toLowerCase());
+  const contactExp = contactProfile.experience || [];
+  userCompanies.forEach(comp => {
+    if (comp && contactExp.some(expStr => expStr.toLowerCase().includes(comp))) {
+      common.companies.push(comp.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '));
+    }
+  });
+  
+  // 4. Common Location
+  if (userProfile.location && contactProfile.about && contactProfile.about.toLowerCase().includes(userProfile.location.toLowerCase())) {
+    common.location = userProfile.location;
+  }
+  
+  return common;
+}
+
+export function generateConnectionNote(userProfile, contactProfile, jobContext, style = 'professional') {
+  const name = contactProfile.name ? contactProfile.name.split(' ')[0] : 'there';
+  const company = contactProfile.company || (jobContext ? jobContext.company : '');
+  const title = contactProfile.title || '';
+  const userTitle = userProfile && userProfile.experience && userProfile.experience[0] ? userProfile.experience[0].title : 'Software Engineer';
+  
+  const common = findCommonGround(userProfile, contactProfile);
+  
+  let intro = `Hi ${name},`;
+  let body = '';
+  let callToAction = 'Looking forward to connecting!';
+  
+  if (style === 'casual') {
+    intro = `Hi ${name} 👋`;
+    if (common.schools.length > 0) {
+      body = `Great to connect with a fellow ${common.schools[0]} alum! I saw your work as a ${title} at ${company} and wanted to reach out to say hi.`;
+    } else if (common.companies.length > 0) {
+      body = `I noticed we both spent time at ${common.companies[0]}! Great to see what you've been working on as a ${title} at ${company}.`;
+    } else if (common.skills.length > 0) {
+      body = `I noticed we both work with ${common.skills.slice(0, 2).join(' & ')}. I've been building some interesting projects in this space recently and wanted to connect!`;
+    } else {
+      body = `I stumbled across your profile and was really impressed by your background as a ${title} at ${company}. I'm also working in this space and wanted to connect!`;
+    }
+    callToAction = `Would love to connect here and stay in touch.`;
+  } else if (style === 'referral_ask') {
+    const jobTitle = jobContext ? jobContext.title : 'open opportunities';
+    body = `I hope you're doing well. I'm currently looking to join the team at ${company} as a ${jobTitle} and saw you work as a ${title} there. Given your experience, I'd love to ask a quick question about the engineering culture if you have a moment.`;
+    if (common.skills.length > 0) {
+      body += ` I have a background in ${common.skills.slice(0, 2).join(' & ')} which seems very relevant to the team's goals.`;
+    }
+    callToAction = `If you have 5 minutes sometime, I would be incredibly grateful to connect. Either way, appreciate your time!`;
+  } else { // professional
+    if (common.companies.length > 0 || common.schools.length > 0) {
+      body = `I am reaching out as a fellow ${common.schools[0] || common.companies[0]} connection. I admire your work at ${company} as a ${title} and would love to connect to learn more about your team's direction and experiences.`;
+    } else {
+      body = `I'm a ${userTitle} interested in the engineering space at ${company}. I came across your profile and was very impressed by your career trajectory as a ${title}.`;
+    }
+    callToAction = `I would appreciate the opportunity to connect and stay in touch.`;
+  }
+  
+  return `${intro}\n\n${body}\n\n${callToAction}`;
+}
+
+export function generateFollowUpNote(userProfile, contactProfile, previousInteraction = '') {
+  const name = contactProfile.name ? contactProfile.name.split(' ')[0] : 'there';
+  const company = contactProfile.company || 'your team';
+  
+  return `Hi ${name},\n\nHope you're doing well! Just wanted to follow up on my previous note. I'm still very interested in learning more about the engineering environment at ${company}.\n\nIf you have a quick moment this week, I'd love to connect. If not, no worries at all!\n\nBest,\n[Your Name]`;
+}

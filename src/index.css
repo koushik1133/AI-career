@@ -2163,3 +2163,207 @@ textarea.form-input {
     max-width: none;
   }
 }
+
+/* ============================================
+   Resume Builder & Networking Hub Styles
+   ============================================ */
+
+.builder-steps {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-2xl);
+  padding: 0 var(--spacing-xl);
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.5;
+  transition: all var(--transition-normal);
+}
+
+.step-node.active {
+  opacity: 1;
+}
+
+.step-node.completed {
+  opacity: 0.8;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+}
+
+.step-node.active .step-number {
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+  color: #FAFAFA;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.step-node.completed .step-number {
+  background: var(--success);
+  border-color: var(--success);
+  color: #FFFFFF;
+}
+
+.step-label {
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.step-node.active .step-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.step-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-color);
+  margin: 0 var(--spacing-md);
+  margin-bottom: 24px;
+}
+
+.builder-item-card {
+  padding: var(--spacing-md);
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  margin-bottom: var(--spacing-md);
+  transition: all var(--transition-fast);
+}
+
+.builder-item-card:hover {
+  border-color: var(--border-focus);
+}
+
+.form-section-group {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  background: var(--bg-card);
+}
+
+.form-section-title {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--spacing-md);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.builder-split-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+.scrollable-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.preview-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+}
+
+.resume-pdf-mockup {
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+  padding: var(--spacing-2xl);
+  border-radius: 4px;
+}
+
+[data-theme="light"] .resume-pdf-mockup {
+  border-color: #E5E7EB;
+}
+
+/* Networking Hub Styles */
+.networking-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-xl);
+}
+
+.discovery-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+}
+
+.contact-card {
+  padding: var(--spacing-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  transition: all var(--transition-normal);
+}
+
+.contact-card:hover {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-sm);
+}
+
+.relevance-badge {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  background: rgba(59, 130, 246, 0.1);
+  color: var(--accent-primary);
+  padding: 4px 8px;
+  border-radius: var(--radius-full);
+}
+
+.success-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(52, 211, 153, 0.1);
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+}
+
+[data-theme="light"] .builder-item-card {
+  background: #F9FAFB;
+}
+
+[data-theme="light"] .discovery-card {
+  background: #F9FAFB;
+}
+
+[data-theme="light"] .relevance-badge {
+  background: rgba(37, 99, 235, 0.08);
+  color: #2563EB;
+}
+
+@media (max-width: 960px) {
+  .builder-split-layout, .networking-grid {
+    grid-template-columns: 1fr;
+  }
+}

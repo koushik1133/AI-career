@@ -4,7 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useState } from 'react';
 import {
   FileText, Briefcase, BarChart3,
-  Sun, Moon, LogOut, Menu, X
+  Sun, Moon, LogOut, Menu, X, PenTool, Users
 } from 'lucide-react';
 
 export default function Layout() {
@@ -15,8 +15,10 @@ export default function Layout() {
 
   const navItems = [
     { path: '/resume', label: 'Resume', icon: FileText },
+    { path: '/builder', label: 'Builder', icon: PenTool },
     { path: '/jobs', label: 'Jobs', icon: Briefcase },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/networking', label: 'Networking', icon: Users },
   ];
 
   const getInitials = (name) => {

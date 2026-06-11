@@ -10,6 +10,8 @@ export function DataProvider({ children }) {
   const [jobs, setJobs] = useState([]);
   const [resumes, setResumes] = useState([]);
   const [activities, setActivities] = useState([]);
+  const [contacts, setContacts] = useState([]);
+  const [userProfile, setUserProfile] = useState(null);
 
   // Load data on user change
   useEffect(() => {
@@ -20,10 +22,14 @@ export function DataProvider({ children }) {
         setJobs(data.jobs || []);
         setResumes(data.resumes || []);
         setActivities(data.activities || []);
+        setContacts(data.contacts || []);
+        setUserProfile(data.userProfile || null);
       } else {
         setJobs([]);
         setResumes([]);
         setActivities([]);
+        setContacts([]);
+        setUserProfile(null);
       }
     }
   }, [storageKey]);
@@ -31,9 +37,9 @@ export function DataProvider({ children }) {
   // Save data on change
   useEffect(() => {
     if (storageKey) {
-      localStorage.setItem(storageKey, JSON.stringify({ jobs, resumes, activities }));
+      localStorage.setItem(storageKey, JSON.stringify({ jobs, resumes, activities, contacts, userProfile }));
     }
-  }, [jobs, resumes, activities, storageKey]);
+  }, [jobs, resumes, activities, contacts, userProfile, storageKey]);
 
   const addJob = (job) => {
     const newJob = {
@@ -189,11 +195,33 @@ export function DataProvider({ children }) {
     };
   };
 
+  const addContact = (contact) => {
+    const newContact = {
+      id: Date.now().toString(),
+      ...contact,
+      addedAt: new Date().toISOString()
+    };
+    setContacts(prev => [newContact, ...prev]);
+    addActivity('contact_added', `Added contact ${contact.name} (${contact.company})`);
+    return newContact;
+  };
+
+  const updateContact = (id, updates) => {
+    setContacts(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const deleteContact = (id) => {
+    const contact = contacts.find(c => c.id === id);
+    setContacts(prev => prev.filter(c => c.id !== id));
+    if (contact) addActivity('contact_deleted', `Removed contact ${contact.name}`);
+  };
+
   return (
     <DataContext.Provider value={{
-      jobs, resumes, activities,
+      jobs, resumes, activities, contacts, userProfile,
       addJob, updateJob, deleteJob,
       addResume, addActivity,
+      addContact, updateContact, deleteContact, setUserProfile,
       getAnalytics
     }}>
       {children}
